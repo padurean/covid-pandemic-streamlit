@@ -7,8 +7,11 @@ LOCATION_COLUMN = 'location'
 NEW_DEATHS_COLUMN = 'new_deaths'
 NEW_DEATHS_PER_MILLION_COLUMN = 'new_deaths_per_million'
 
-"""### COVID Pandemic - Visual Data Explorer
-Data is retrieved from [OurWorldInData.org](https://github.com/owid/covid-19-data/tree/master/public/data)"""
+st.markdown(
+  """### COVID Pandemic :mag_right: Visual Data Explorer
+  <small>_data is refreshed each 3 hours from
+  [OurWorldInData.org](https://github.com/owid/covid-19-data/tree/master/public/data)_</small>""",
+  unsafe_allow_html=True)
 
 # --> data
 # cache the data for 3 hours
@@ -17,12 +20,12 @@ def load_data():
   return pd.read_csv('https://covid.ourworldindata.org/data/owid-covid-data.csv', parse_dates=[DATE_COLUMN])
 
 df = load_data()
-# <-- data
+# <--
 
 # --> user inputs and filtered data
 # locations multiselect input
 all_locations = df[LOCATION_COLUMN].unique()
-locations = st.sidebar.multiselect('Locations', all_locations, default=['Germany', 'Sweden', 'Romania'])
+locations = st.multiselect('Show for locations:', all_locations, default=['Germany', 'Sweden', 'Romania'])
 if not locations:
   ':no_entry: Please select at least one location.'
   st.stop()
@@ -35,20 +38,20 @@ df_deaths = df_deaths[df_deaths[NEW_DEATHS_PER_MILLION_COLUMN].notnull()]
 
 # dates range input
 dates = sorted(pd.to_datetime(df_deaths[DATE_COLUMN]).dt.date.unique().tolist())
-start_date, end_date = st.sidebar.select_slider(
-  'Show for period',
+start_date, end_date = st.select_slider(
+  'Show for period:',
   options=dates,
   value=(dates[-200], dates[-1]),
   format_func=(lambda x: x.strftime("%b'%y")))
-# <-- user inputs and filtered data
+# <--
 
 # --> chart
 df_deaths_in_range = df_deaths[
   (df_deaths[DATE_COLUMN] >= pd.Timestamp(start_date)) &
   (df_deaths[DATE_COLUMN] <= pd.Timestamp(end_date))
 ]
-deaths_lines = alt.Chart().mark_line(point=True).encode(
-  x=alt.X('monthdate('+DATE_COLUMN+'):O', title='Date'),
+deaths_lines = alt.Chart(title="New Deaths per Million").mark_line(point=True).encode(
+  x=alt.X('monthdate('+DATE_COLUMN+'):O', title=''),
   y=alt.Y(NEW_DEATHS_PER_MILLION_COLUMN, title='New Deaths per Million'),
   color=alt.Color(LOCATION_COLUMN, title='Location'),
   tooltip=[
@@ -56,8 +59,7 @@ deaths_lines = alt.Chart().mark_line(point=True).encode(
     alt.Tooltip(LOCATION_COLUMN, title='Location'),
     alt.Tooltip(NEW_DEATHS_COLUMN, title='New Deaths'),
     alt.Tooltip(NEW_DEATHS_PER_MILLION_COLUMN, title='New Deaths per Million'),
-  ]
-)
+  ])
 deaths_mean_lines = alt.Chart().mark_rule(strokeDash=[5,1]).encode(
   y='mean('+NEW_DEATHS_PER_MILLION_COLUMN+')',
   color=LOCATION_COLUMN,
@@ -66,14 +68,7 @@ deaths_mean_lines = alt.Chart().mark_rule(strokeDash=[5,1]).encode(
     alt.Tooltip('mean('+NEW_DEATHS_PER_MILLION_COLUMN+')', title='Mean'),
     alt.Tooltip(LOCATION_COLUMN, title='Location')
   ])
-chart = alt.layer(
-  deaths_lines,
-  deaths_mean_lines,
-  data=df_deaths_in_range
-).properties(
-  width=750,
-  height=350
-).interactive()
+chart = alt.layer(deaths_lines, deaths_mean_lines, data=df_deaths_in_range).configure_legend(orient='bottom')
 
-st.altair_chart(chart)
-# <-- chart
+st.altair_chart(chart, use_container_width=True)
+# <--
