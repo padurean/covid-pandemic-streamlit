@@ -1,4 +1,8 @@
-# Dev How To
+# COVID Pandemic :mag_right: Visual Data Explorer using [Python 3](https://www.python.org) and [Streamlit](https://streamlit.io) (and [Pandas](https://pandas.pydata.org) and [Altair](https://altair-viz.github.io))
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/padurean/covid-pandemic-streamlit)
+
+## Dev How To
 
 - Install [direnv](https://direnv.net/docs/installation.html) and make sure path to python and pip bin folders are present in the `PATH` env var
   - on MacOS (with Python 3.9 already installed with `brew install python@3.9`):
