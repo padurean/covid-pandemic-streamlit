@@ -5,6 +5,7 @@ import altair as alt
 # column names constants
 DATE_COL = 'date'
 LOCATION_COL = 'location'
+POPULATION_COL = 'population'
 # deaths columns
 NEW_DEATHS_COL = 'new_deaths'
 NEW_DEATHS_PER_MILLION_COL = 'new_deaths_per_million'
@@ -13,6 +14,12 @@ NEW_DEATHS_SMOOTHED_PER_MILLION_COL = 'new_deaths_smoothed_per_million'
 NEW_CASES_COL = 'new_cases'
 NEW_CASES_PER_MILLION_COL = 'new_cases_per_million'
 NEW_CASES_SMOOTHED_PER_MILLION_COL = 'new_cases_smoothed_per_million'
+# vaccinations columns
+PEOPLE_FULLY_VACCINATED_COL = 'people_fully_vaccinated'
+PEOPLE_FULLY_VACCINATED_PER_HUNDRED_COL = 'people_fully_vaccinated_per_hundred'
+# booster vaccinations columns
+TOTAL_BOOSTERS_COL = 'total_boosters'
+TOTAL_BOOSTERS_PER_HUNDRED_COL = 'total_boosters_per_hundred'
 
 # page header
 st.markdown(
@@ -30,7 +37,7 @@ def load_data():
   return pd.read_csv('https://covid.ourworldindata.org/data/owid-covid-data.csv', parse_dates=[DATE_COL])
 
 # create and shows a chart
-def show_rel_chart(kind, rel_unit, df, smoothed, show_mean, abs_col, rel_col, rel_col_smoothed):
+def show_rel_chart(kind_label, rel_unit, df, smoothed, show_mean, abs_col, rel_col, rel_col_smoothed):
   # configure column and labels depending on the smoothing option
   col = rel_col_smoothed
   smoothed_label = ' (smoothed)'
@@ -38,23 +45,27 @@ def show_rel_chart(kind, rel_unit, df, smoothed, show_mean, abs_col, rel_col, re
     col = rel_col
     smoothed_label = ''
 
-  abs_title = 'New '+ kind
+  abs_title = kind_label
   rel_title = abs_title +' per ' + rel_unit
   smoothed_title = rel_title + ' (smoothed)'
   title = rel_title + smoothed_label
 
+  # data lines tooltips
+  tooltips = [
+    alt.Tooltip(DATE_COL, title='Date', format=('%-d %b %Y')),
+    alt.Tooltip(LOCATION_COL, title='Location'),
+    alt.Tooltip(POPULATION_COL, title='Population', format="~s"),
+    alt.Tooltip(abs_col, title=abs_title, format="~s"),
+    alt.Tooltip(rel_col, title=rel_title)
+  ]
+  if rel_col_smoothed != '':
+    tooltips.append(alt.Tooltip(rel_col_smoothed, title=smoothed_title))
   # data lines
   lines = alt.Chart(title=title).mark_line(point=True).encode(
     x=alt.X(DATE_COL+':T', title='', axis=alt.Axis(format = ("%-d %b"))),
     y=alt.Y(col, title=title),
     color=alt.Color(LOCATION_COL, title='Location'),
-    tooltip=[
-      alt.Tooltip(DATE_COL, title='Date', format=('%-d %b %Y')),
-      alt.Tooltip(LOCATION_COL, title='Location'),
-      alt.Tooltip(abs_col, title=abs_title),
-      alt.Tooltip(rel_col, title=rel_title),
-      alt.Tooltip(rel_col_smoothed, title=smoothed_title),
-    ])
+    tooltip=tooltips)
   all_lines = [lines]
 
   # data mean lines
@@ -84,7 +95,7 @@ config_expander = st.expander('⚙️ Configure', expanded=False)
 all_locations = sorted(df[LOCATION_COL].unique())
 with config_expander:
   # data kind
-  kind = st.selectbox("Data:", ('deaths', 'cases'), index=0, format_func=lambda x: x.capitalize())
+  kind = st.selectbox("Data:", ('deaths', 'cases', 'vaccinations', 'boosters'), index=0, format_func=lambda x: x.capitalize())
   # locations multiselect input
   locations = st.multiselect('Locations:', all_locations, default=['Germany', 'Sweden', 'Romania'])
   if not locations:
@@ -92,16 +103,28 @@ with config_expander:
     st.stop()
 
 # filter data
-abs_col=NEW_DEATHS_COL
-rel_col=NEW_DEATHS_PER_MILLION_COL
-rel_col_smoothed=NEW_DEATHS_SMOOTHED_PER_MILLION_COL
-if kind == 'cases':
+if kind == 'deaths':
+  abs_col=NEW_DEATHS_COL
+  rel_col=NEW_DEATHS_PER_MILLION_COL
+  rel_col_smoothed=NEW_DEATHS_SMOOTHED_PER_MILLION_COL
+elif kind == 'cases':
   abs_col=NEW_CASES_COL
   rel_col=NEW_CASES_PER_MILLION_COL
   rel_col_smoothed=NEW_CASES_SMOOTHED_PER_MILLION_COL
+elif kind == 'vaccinations':
+  abs_col=PEOPLE_FULLY_VACCINATED_COL
+  rel_col=PEOPLE_FULLY_VACCINATED_PER_HUNDRED_COL
+  rel_col_smoothed=''
+elif kind == 'boosters':
+  abs_col=TOTAL_BOOSTERS_COL
+  rel_col=TOTAL_BOOSTERS_PER_HUNDRED_COL
+  rel_col_smoothed=''
 
 df = df[df[LOCATION_COL].isin(locations)]
-df_sub = df[[DATE_COL,LOCATION_COL,abs_col,rel_col,rel_col_smoothed]]
+if rel_col_smoothed != '':
+  df_sub = df[[DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col,rel_col_smoothed]]
+else:
+  df_sub = df[[DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col]]
 df_sub = df_sub[df_sub[rel_col].notnull()]
 
 dates = sorted(pd.to_datetime(df_sub[DATE_COL]).dt.date.unique().tolist())
@@ -113,11 +136,16 @@ with config_expander:
     value=(dates[-90], dates[-1]),
     format_func=(lambda x: x.strftime("%b'%y")))
 
-  col1, col2 = st.columns(2)
-  with col1:
-    # 7-day smoothed option
-    smoothed = st.checkbox('7-day smoothed', value=True)
-  with col2:
+  smoothed = False
+  if (kind != 'vaccinations') & (kind != 'boosters'):
+    col1, col2 = st.columns(2)
+    with col1:
+      # 7-day smoothed option
+      smoothed = st.checkbox('7-day smoothed', value=True)
+    with col2:
+      # show/hide mean option
+      show_mean = st.checkbox('Show mean', value=True)
+  else:
     # show/hide mean option
     show_mean = st.checkbox('Show mean', value=True)
 #<--
@@ -129,9 +157,20 @@ df_in_range = df_sub[
   (df_sub[DATE_COL] <= pd.Timestamp(end_date))
 ]
 # show the relative chart
+kind_label = kind
+rel_unit = 'million'
+if (kind == 'deaths') | (kind == 'cases'):
+  kind_label = 'New ' + kind
+elif kind == 'vaccinations':
+  kind_label = 'People fully vaccinated'
+  rel_unit = 'hundred'
+elif kind == 'boosters':
+  kind_label = 'Total boosters'
+  rel_unit = 'hundred'
+
 show_rel_chart(
-  kind=kind,
-  rel_unit='million',
+  kind_label=kind_label,
+  rel_unit=rel_unit,
   df=df_in_range,
   smoothed=smoothed,
   show_mean=show_mean,
