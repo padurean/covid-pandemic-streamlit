@@ -111,7 +111,7 @@ with config_expander:
     value=(dates[-90], dates[-1]),
     format_func=(lambda x: x.strftime("%b'%y")))
 
-  col1, col2, _ = st.columns(3)
+  col1, col2 = st.columns(2)
   with col1:
     # 7-day smoothed option
     smoothed = st.checkbox('7-day smoothed', value=True)
