@@ -16,9 +16,11 @@ NEW_CASES_SMOOTHED_PER_MILLION_COL = 'new_cases_smoothed_per_million'
 
 # page header
 st.markdown(
-  """### COVID Pandemic :mag_right: Visual Data Explorer
+  '''
+  ### <span style="font-size: 2em;line-height:1em;vertical-align:middle;">🦠</span> COVID Pandemic :mag_right: Visual Data Explorer
   <small>_data is refreshed each 3 hours from
-  [OurWorldInData.org](https://github.com/owid/covid-19-data/tree/master/public/data)_</small>""",
+  [OurWorldInData.org](https://github.com/owid/covid-19-data/tree/master/public/data)_</small>
+  ''',
   unsafe_allow_html=True)
 
 #===> functions definitions
