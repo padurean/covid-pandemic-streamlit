@@ -144,10 +144,10 @@ with config_expander:
       smoothed = st.checkbox('7-day smoothed', value=True)
     with col2:
       # show/hide mean option
-      show_mean = st.checkbox('Show mean', value=True)
+      show_mean = st.checkbox('Show mean', value=False)
   else:
     # show/hide mean option
-    show_mean = st.checkbox('Show mean', value=True)
+    show_mean = st.checkbox('Show mean', value=False)
 #<--
 
 #--> filter data and show charts
