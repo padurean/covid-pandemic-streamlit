@@ -108,7 +108,7 @@ with config_expander:
   start_date, end_date = st.select_slider(
     'Period:',
     options=dates,
-    value=(dates[-31], dates[-1]),
+    value=(dates[-90], dates[-1]),
     format_func=(lambda x: x.strftime("%b'%y")))
 
   col1, col2, _ = st.columns(3)
