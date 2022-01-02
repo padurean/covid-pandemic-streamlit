@@ -23,6 +23,9 @@ TOTAL_BOOSTERS_PER_HUNDRED_COL = 'total_boosters_per_hundred'
 # reproduction rate
 REPRODUCTION_RATE_COL = 'reproduction_rate'
 
+# set wide mode by default - i.e. occupy as much page width as possible
+st.set_page_config(layout='wide')
+
 # page header
 st.markdown(
   '''
