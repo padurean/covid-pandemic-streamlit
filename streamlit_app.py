@@ -43,11 +43,11 @@ def show_rel_chart(kind, rel_unit, df, smoothed, show_mean, abs_col, rel_col, re
 
   # data lines
   lines = alt.Chart(title=title).mark_line(point=True).encode(
-    x=alt.X('monthdate('+DATE_COL+'):O', title=''),
+    x=alt.X(DATE_COL+':T', title='', axis=alt.Axis(format = ("%-d %b"))),
     y=alt.Y(col, title=title),
     color=alt.Color(LOCATION_COL, title='Location'),
     tooltip=[
-      alt.Tooltip(DATE_COL, title='Date'),
+      alt.Tooltip(DATE_COL, title='Date', format=('%-d %b %Y')),
       alt.Tooltip(LOCATION_COL, title='Location'),
       alt.Tooltip(abs_col, title=abs_title),
       alt.Tooltip(rel_col, title=rel_title),
@@ -108,7 +108,7 @@ with config_expander:
   start_date, end_date = st.select_slider(
     'Period:',
     options=dates,
-    value=(dates[-90], dates[-1]),
+    value=(dates[-31], dates[-1]),
     format_func=(lambda x: x.strftime("%b'%y")))
 
   col1, col2, _ = st.columns(3)
