@@ -1,9 +1,11 @@
+import numpy as np
 import pandas as pd
 import streamlit as st
 import altair as alt
 
 # column names constants
 DATE_COL = 'date'
+CONTINENT_COL = 'continent'
 LOCATION_COL = 'location'
 POPULATION_COL = 'population'
 # deaths columns
@@ -82,7 +84,7 @@ def show_chart(kind_label, rel_unit, df, smoothed, show_mean, abs_col, rel_col, 
     tooltips.append(alt.Tooltip(rel_col_smoothed, title=smoothed_title))
   if bool(extra_tooltips):
     for extra_col, title_and_fmt in extra_tooltips.items():
-      tooltips.append(alt.Tooltip(extra_col, title=title_and_fmt['title']+":", format=title_and_fmt['fmt']))
+      tooltips.append(alt.Tooltip(extra_col, title=title_and_fmt['title'], format=title_and_fmt['fmt']))
   # data lines
   lines = alt.Chart(title=title).mark_line(point=True).encode(
     x=alt.X(DATE_COL+':T', title='', axis=alt.Axis(format = ("%-d %b"))),
@@ -165,16 +167,17 @@ elif kind == 'boosters':
 elif kind == 'reproduction rate':
   abs_col=REPRODUCTION_RATE_COL
 
-df = df[df[LOCATION_COL].isin(locations)]
+df_sub = df[df[LOCATION_COL].isin(locations)]
+required_col = rel_col
 if rel_col_smoothed != '':
-  df_sub = df[[DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col,rel_col_smoothed]+extra_cols]
-  df_sub = df_sub[df_sub[rel_col].notnull()]
+  sub_cols = [DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col,rel_col_smoothed]+extra_cols
 elif rel_col != '':
-  df_sub = df[[DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col]+extra_cols]
-  df_sub = df_sub[df_sub[rel_col].notnull()]
+  sub_cols = [DATE_COL,LOCATION_COL,POPULATION_COL,abs_col,rel_col]+extra_cols
 else:
-  df_sub = df[[DATE_COL,LOCATION_COL,POPULATION_COL,abs_col]+extra_cols]
-  df_sub = df_sub[df_sub[abs_col].notnull()]
+  sub_cols = [DATE_COL,LOCATION_COL,POPULATION_COL,abs_col]+extra_cols
+  required_col = abs_col
+
+df_sub = df_sub[sub_cols][df_sub[required_col].notnull()]
 
 dates = sorted(pd.to_datetime(df_sub[DATE_COL]).dt.date.unique().tolist())
 if not dates:
@@ -240,5 +243,26 @@ show_chart(
   rel_col_smoothed=rel_col_smoothed,
   abs_format=abs_format,
   extra_tooltips=extra_tooltips)
+#<--
+
+# show tip
+st.info(':bulb: Hover or tap on chart data points to see more details.')
+
+#--> show data
+'---'
+show_data = st.checkbox('Show latest data as table', value=False)
+if show_data:
+  continents = ['Selected', 'All'] + sorted(list(filter(lambda x: type(x) == str, df[CONTINENT_COL].unique().tolist())))
+  show_data_for_locations = st.selectbox('For locations:', options=continents)
+  if show_data_for_locations == 'Selected':
+    df_to_show_as_table = df_in_range
+  elif show_data_for_locations == 'All':
+    df_to_show_as_table = df[sub_cols][df[required_col].notnull()]
+  else:
+    df_to_show_as_table = df[sub_cols][(df[CONTINENT_COL] == show_data_for_locations) & (df[required_col].notnull())]
+
+  df_to_show_as_table = df_to_show_as_table.sort_values(by="date").drop_duplicates(subset=["location"], keep="last")
+  df_to_show_as_table.index = np.arange(1, len(df_to_show_as_table)+1)
+  df_to_show_as_table
 #<--
 #<===
