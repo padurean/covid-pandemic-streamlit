@@ -88,7 +88,7 @@ def show_chart(kind_label, rel_unit, df, smoothed, show_mean, abs_col, rel_col, 
   # data lines
   lines = alt.Chart(title=title).mark_line(point=True).encode(
     x=alt.X(DATE_COL+':T', title='', axis=alt.Axis(format = ("%-d %b"))),
-    y=alt.Y(col, title=title),
+    y=alt.Y(col, title=''),
     color=alt.Color(LOCATION_COL, title='Location'),
     tooltip=tooltips)
   all_lines = [lines]
